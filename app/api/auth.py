@@ -35,13 +35,25 @@ async def register(
             detail="Email already registered"
         )
 
+
+    result = await db.execute(select(User).where(User.username == user_data.username))
+    existing_user = result.scalar_one_or_none()
+
+
+    if existing_user:
+        raise HTTPException(
+            status_code=400,
+            detail="Username already registered"
+        )
+
     # Хэшируем пароль
     hashed_password = get_password_hash(user_data.password)
 
     # Создаём пользователя
     db_user = User(
         email=user_data.email,
-        hashed_password=hashed_password
+        hashed_password=hashed_password,
+        username=user_data.username
     )
     db.add(db_user)
     await db.commit()
