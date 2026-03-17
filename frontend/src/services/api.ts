@@ -123,6 +123,8 @@ export const api = {
 
   createBlock: (payload: CreateBlockPayload) => request<BlockResponse>('/blocks/create_block', { method: 'POST', body: payload, auth: true }),
 
+  getBlocks: () => request<BlockResponse[]>('/blocks/text_blocks', { auth: true }),
+
   getBlock: (id: string) => request<BlockResponse>(`/blocks/text_block?uuid=${id}`),
 
   getComments: (id: string, page = 1, pageSize = 20) => request<CommentListResponse>(`/comment/get_comments?id_block=${id}&page=${page}&page_size=${pageSize}`),
