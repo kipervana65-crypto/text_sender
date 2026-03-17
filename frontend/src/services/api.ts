@@ -123,12 +123,24 @@ export const api = {
 
   createBlock: (payload: CreateBlockPayload) => request<BlockResponse>('/blocks/create_block', { method: 'POST', body: payload, auth: true }),
 
+  updateBlock: (id: string, payload: CreateBlockPayload) =>
+    request<BlockResponse>(`/blocks/update_block?id=${id}`, { method: 'PUT', body: payload, auth: true }),
+
+  deleteBlock: (id: string) => request<{ message: string }>(`/blocks/delete_block?id=${id}`, { method: 'DELETE', auth: true }),
+
   getBlocks: () => request<BlockResponse[]>('/blocks/text_blocks', { auth: true }),
 
   getBlock: (id: string) => request<BlockResponse>(`/blocks/text_block?uuid=${id}`),
 
   getComments: (id: string, page = 1, pageSize = 20) => request<CommentListResponse>(`/comment/get_comments?id_block=${id}&page=${page}&page_size=${pageSize}`),
 
+
   createComment: (blockId: string, payload: CreateCommentPayload) =>
     request<CommentResponse>(`/comment/create?id_block=${blockId}`, { method: 'POST', body: payload, auth: true }),
+
+  updateComment: (commentId: number, payload: CreateCommentPayload) =>
+    request<CommentResponse>(`/comment/update?id_comment=${commentId}`, { method: 'PUT', body: payload, auth: true }),
+
+  deleteComment: (commentId: number) =>
+    request<{ message: string }>(`/comment/delete?id_comment=${commentId}`, { method: 'DELETE', auth: true }),
 };

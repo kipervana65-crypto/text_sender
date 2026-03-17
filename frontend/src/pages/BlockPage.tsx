@@ -12,7 +12,7 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 
 export const BlockPage = () => {
   const { id = '' } = useParams();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const [block, setBlock] = useState<BlockResponse | null>(null);
   const [comments, setComments] = useState<CommentResponse[]>([]);
@@ -50,7 +50,7 @@ export const BlockPage = () => {
       ) : (
         <StatusMessage message="Войдите, чтобы оставить комментарий" type="info" />
       )}
-      <CommentList comments={comments} />
+      <CommentList comments={comments} currentUsername={user?.username} onCommentsChanged={loadData} />
     </section>
   );
 };
