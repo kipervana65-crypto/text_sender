@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
 from .api.auth import router as auth_router
 from .api.users import router as user_router
 from .db.session import engine
@@ -7,6 +9,14 @@ from .api.block_text import router as text_router
 from .api.comment import router as comment_router
 
 app = FastAPI(title="Auth API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # для продакшена лучше указать конкретные домены
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.on_event("startup")
 async def startup():
