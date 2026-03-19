@@ -1,49 +1,37 @@
 # Text Sender
 
-Text Sender — fullstack-приложение для работы с текстовыми блоками и комментариями.
+Text Sender — fullstack-приложение для текстовых блоков и комментариев.
 
-## Что внутри
-- **Backend:** FastAPI + SQLAlchemy (async) + PostgreSQL.
-- **Frontend:** React + TypeScript + Vite (сборка и раздача через Nginx).
-- **Инфраструктура:** Docker Compose (3 сервиса: `db`, `backend`, `frontend`).
+## Что в проекте
+- **Backend:** FastAPI + SQLAlchemy (async) + PostgreSQL
+- **Frontend:** React + TypeScript + Vite
+- **Запуск:** Docker Compose (db + backend + frontend)
 
-## Структура проекта
-- `app/` — backend API и бизнес-логика.
-- `alembic/` — миграции БД.
-- `frontend/` — клиентское приложение.
-- `Dockerfile.backend` — образ backend.
-- `frontend/Dockerfile` — образ frontend.
-- `docker-compose.yml` — оркестрация сервисов.
-
----
-
-## Быстрый запуск (рекомендуется)
+## Быстрый запуск через Docker (рекомендуется)
 
 ### Требования
-- Docker Desktop (или Docker Engine + Compose plugin)
-- Команда `docker compose` должна быть доступна в терминале
+- Docker Desktop (или Docker Engine)
+- Docker Compose V2 (`docker compose`)
 
-### 1) Сборка и запуск
+### Запуск
 ```bash
 docker compose up --build
 ```
 
-### 2) Проверить, что всё поднялось
+### Доступные адреса
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- Swagger UI: http://localhost:8000/docs
+- Backend: http://localhost:8000
+- Swagger: http://localhost:8000/docs
 
-### 3) Остановить
+### Остановка
 ```bash
 docker compose down
 ```
 
-### 4) Полная очистка (вместе с БД)
+### Остановка + удаление данных БД
 ```bash
 docker compose down -v
 ```
-
----
 
 ## Локальный запуск без Docker
 
@@ -81,70 +69,25 @@ VITE_API_BASE_URL=http://localhost:8000
 npm run dev
 ```
 
----
-
-## Переменные окружения
+## Важные переменные окружения
 
 ### Backend
-- `DATABASE_URL` — URL подключения к PostgreSQL.
-- `SECRET_KEY` — секретный ключ JWT.
+- `DATABASE_URL` — URL подключения к PostgreSQL
+- `SECRET_KEY` — секрет для JWT
 
 ### Frontend
-- `VITE_API_BASE_URL` — базовый URL backend API.
+- `VITE_API_BASE_URL` — URL backend API
 
----
+## Troubleshooting
 
-## Полезные Docker-команды
+### Предупреждение `version is obsolete`
+В Compose V2 поле `version` не требуется. В этом проекте оно не используется.
 
-Запуск в фоне:
-```bash
-docker compose up -d --build
-```
-
-Логи:
-```bash
-docker compose logs -f
-```
-
-Пересоздать только frontend:
-```bash
-docker compose build frontend && docker compose up -d frontend
-```
-
-Открыть shell в backend-контейнере:
-```bash
-docker compose exec backend sh
-```
-
-Применить миграции:
-```bash
-docker compose exec backend alembic upgrade head
-```
-
----
-
-## Troubleshooting (Windows / Docker Desktop)
-
-### 1) `version is obsolete`
-В Compose V2 поле `version` не нужно. В этом проекте оно уже убрано из `docker-compose.yml`.
-
-### 2) `unable to get image ... 500 Internal Server Error`
-Обычно это проблема локального Docker Desktop/кэша. Выполните:
+### Ошибка `unable to get image ... 500 Internal Server Error`
+Попробуйте очистку и пересборку:
 
 ```bash
 docker compose down --remove-orphans
-docker image rm text-sender-frontend:latest text-sender-backend:latest
 docker builder prune -f
 docker compose up --build
 ```
-
-Если не помогло:
-1. Перезапустите Docker Desktop.
-2. Выполните `docker version` и проверьте, что клиент и сервер отвечают.
-3. Обновите Docker Desktop до актуальной версии.
-
-### 3) Frontend не видит backend
-Проверьте, что фронт собран с правильным `VITE_API_BASE_URL`:
-- в Docker Compose используется `http://localhost:8000`;
-- локально — в `frontend/.env`.
-
