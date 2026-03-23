@@ -5,7 +5,7 @@ load_dotenv()
 
 DATABASE_URL=getenv('DATABASE_URL')
 SECRET_KEY=getenv('SECRET_KEY')
-
+print(DATABASE_URL)
 class Settings(BaseSettings):
     DATABASE_URL: str
     SECRET_KEY: str

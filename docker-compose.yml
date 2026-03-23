@@ -4,8 +4,8 @@ services:
     container_name: text_sender_db
     environment:
       POSTGRES_DB: text_sender
-      POSTGRES_USER: text_sender
-      POSTGRES_PASSWORD: text_sender
+      POSTGRES_USER: iv
+      POSTGRES_PASSWORD: 12345
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -22,7 +22,7 @@ services:
       dockerfile: Dockerfile.backend
     container_name: text_sender_backend
     environment:
-      DATABASE_URL: postgresql+asyncpg://text_sender:text_sender@db:5432/text_sender
+      DATABASE_URL: postgresql+asyncpg://iv:12345@db:5432/text_sender
       SECRET_KEY: super_secret_key_change_me
     depends_on:
       db:
