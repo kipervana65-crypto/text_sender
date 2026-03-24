@@ -7,7 +7,7 @@ import { Loader } from '../components/Loader';
 import { StatusMessage } from '../components/StatusMessage';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../services/api';
-import { BlockResponse, CommentResponse } from '../types/api';
+import { BlockResponse, CommentResponse, ThreadedComment } from '../types/api';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 export const BlockPage = () => {
@@ -15,23 +15,44 @@ export const BlockPage = () => {
   const { isAuthenticated, user } = useAuth();
 
   const [block, setBlock] = useState<BlockResponse | null>(null);
-  const [comments, setComments] = useState<CommentResponse[]>([]);
+  const [comments, setComments] = useState<ThreadedComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const loadCommentTree = useCallback(async (blockId: string, parentId?: number): Promise<ThreadedComment[]> => {
+    const fetchBranch = async (currentParentId?: number): Promise<ThreadedComment[]> => {
+      const response = await api.getComments(blockId, 1, 100, currentParentId);
+      return Promise.all(
+        response.items.map(async (comment: CommentResponse) => {
+          const replies = await fetchBranch(comment.id);
+          return {
+            ...comment,
+            replies,
+          };
+        }),
+      );
+    };
+
+    return fetchBranch(parentId);
+  }, []);
+
+  const countAllComments = useCallback((items: ThreadedComment[]): number => {
+    return items.reduce((total, item) => total + 1 + countAllComments(item.replies), 0);
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [blockResponse, commentResponse] = await Promise.all([api.getBlock(id), api.getComments(id)]);
+      const [blockResponse, threadedComments] = await Promise.all([api.getBlock(id), loadCommentTree(id)]);
       setBlock(blockResponse);
-      setComments(commentResponse.items);
+      setComments(threadedComments);
     } catch (e) {
       setError(getUserFriendlyError(e));
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, loadCommentTree]);
 
   useEffect(() => {
     void loadData();
@@ -43,14 +64,20 @@ export const BlockPage = () => {
 
   return (
     <section>
-      <BlockView block={block} />
+      <BlockView block={block} commentsCount={countAllComments(comments)} />
       <h2 className="mb-2 text-lg font-semibold">Комментарии</h2>
       {isAuthenticated ? (
         <CommentForm blockId={id} onSuccess={loadData} />
       ) : (
         <StatusMessage message="Войдите, чтобы оставить комментарий" type="info" />
       )}
-      <CommentList comments={comments} currentUsername={user?.username} onCommentsChanged={loadData} />
+      <CommentList
+        blockId={id}
+        comments={comments}
+        currentUsername={user?.username}
+        isAuthenticated={isAuthenticated}
+        onCommentsChanged={loadData}
+      />
     </section>
   );
 };

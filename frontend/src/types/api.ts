@@ -71,3 +71,7 @@ export interface CommentListResponse {
   page: number;
   page_size: number;
 }
+
+export interface ThreadedComment extends CommentResponse {
+  replies: ThreadedComment[];
+}
