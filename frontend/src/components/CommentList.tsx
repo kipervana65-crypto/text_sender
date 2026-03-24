@@ -1,22 +1,35 @@
 import { FormEvent, useState } from 'react';
 import { api } from '../services/api';
-import { CommentResponse } from '../types/api';
+import { ThreadedComment } from '../types/api';
 import { getUserFriendlyError } from '../utils/errorMessages';
+import { CommentForm } from './CommentForm';
 import { StatusMessage } from './StatusMessage';
 
 type CommentListProps = {
-  comments: CommentResponse[];
+  blockId: string;
+  comments: ThreadedComment[];
   currentUsername?: string;
+  isAuthenticated: boolean;
   onCommentsChanged: () => Promise<void>;
+  depth?: number;
 };
 
-export const CommentList = ({ comments, currentUsername, onCommentsChanged }: CommentListProps) => {
+export const CommentList = ({
+  blockId,
+  comments,
+  currentUsername,
+  isAuthenticated,
+  onCommentsChanged,
+  depth = 0,
+}: CommentListProps) => {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState('');
   const [busyCommentId, setBusyCommentId] = useState<number | null>(null);
+  const [replyingCommentId, setReplyingCommentId] = useState<number | null>(null);
+  const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
-  const startEdit = (comment: CommentResponse) => {
+  const startEdit = (comment: ThreadedComment) => {
     setEditingCommentId(comment.id);
     setEditingValue(comment.comment);
     setError(null);
@@ -52,6 +65,9 @@ export const CommentList = ({ comments, currentUsername, onCommentsChanged }: Co
       if (editingCommentId === commentId) {
         cancelEdit();
       }
+      if (replyingCommentId === commentId) {
+        setReplyingCommentId(null);
+      }
       await onCommentsChanged();
     } catch (e) {
       setError(getUserFriendlyError(e));
@@ -60,18 +76,41 @@ export const CommentList = ({ comments, currentUsername, onCommentsChanged }: Co
     }
   };
 
-  if (!comments.length) {
+  const toggleReplies = (commentId: number) => {
+    setExpandedComments((previous) => {
+      const next = new Set(previous);
+      if (next.has(commentId)) {
+        next.delete(commentId);
+      } else {
+        next.add(commentId);
+      }
+      return next;
+    });
+  };
+
+  const getRepliesLabel = (count: number) => {
+    const mod10 = count % 10;
+    const mod100 = count % 100;
+    if (mod10 === 1 && mod100 !== 11) return `${count} ответ`;
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${count} ответа`;
+    return `${count} ответов`;
+  };
+
+  if (!comments.length && depth === 0) {
     return <p className="rounded border bg-white p-3 text-sm text-slate-500">Комментариев пока нет.</p>;
   }
 
   return (
     <div>
       {error ? <StatusMessage message={error} type="error" /> : null}
-      <ul className="space-y-3">
+      <ul className={depth === 0 ? 'space-y-3' : 'space-y-3 border-l border-slate-200 pl-4'}>
         {comments.map((comment) => {
           const isOwnComment = currentUsername === comment.username;
           const isEditing = editingCommentId === comment.id;
           const isBusy = busyCommentId === comment.id;
+          const isReplying = replyingCommentId === comment.id;
+          const hasReplies = comment.replies.length > 0;
+          const isRepliesExpanded = expandedComments.has(comment.id);
 
           return (
             <li key={comment.id} className="rounded border bg-white p-3">
@@ -108,28 +147,85 @@ export const CommentList = ({ comments, currentUsername, onCommentsChanged }: Co
               ) : (
                 <>
                   <p className="text-sm text-slate-800">{comment.comment}</p>
-                  {isOwnComment ? (
-                    <div className="mt-2 flex gap-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {isAuthenticated ? (
                       <button
                         type="button"
                         className="rounded border px-3 py-1 text-sm text-slate-700 disabled:opacity-50"
-                        onClick={() => startEdit(comment)}
+                        onClick={() => setReplyingCommentId(isReplying ? null : comment.id)}
                         disabled={isBusy}
                       >
-                        Изменить
+                        {isReplying ? 'Скрыть ответ' : 'Ответить'}
                       </button>
-                      <button
-                        type="button"
-                        className="rounded border border-red-300 px-3 py-1 text-sm text-red-600 disabled:opacity-50"
-                        onClick={() => void deleteComment(comment.id)}
-                        disabled={isBusy}
-                      >
-                        {isBusy ? 'Удаление...' : 'Удалить'}
-                      </button>
-                    </div>
-                  ) : null}
+                    ) : null}
+                    {isOwnComment ? (
+                      <>
+                        <button
+                          type="button"
+                          className="rounded border px-3 py-1 text-sm text-slate-700 disabled:opacity-50"
+                          onClick={() => startEdit(comment)}
+                          disabled={isBusy}
+                        >
+                          Изменить
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded border border-red-300 px-3 py-1 text-sm text-red-600 disabled:opacity-50"
+                          onClick={() => void deleteComment(comment.id)}
+                          disabled={isBusy}
+                        >
+                          {isBusy ? 'Удаление...' : 'Удалить'}
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 </>
               )}
+
+              {isReplying ? (
+                <CommentForm
+                  blockId={blockId}
+                  parentId={comment.id}
+                  onSuccess={async () => {
+                    setReplyingCommentId(null);
+                    await onCommentsChanged();
+                  }}
+                  label="Ваш ответ"
+                  buttonText="Ответить"
+                  className="mt-3 rounded border bg-slate-50 p-3"
+                />
+              ) : null}
+
+              {hasReplies ? (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-sm text-blue-600 transition hover:text-blue-700"
+                    onClick={() => toggleReplies(comment.id)}
+                  >
+                    {isRepliesExpanded ? 'Скрыть ответы' : `Посмотреть ${getRepliesLabel(comment.replies.length)}`}
+                    <span
+                      className={`inline-block text-xs transition-transform ${isRepliesExpanded ? 'rotate-180' : 'rotate-0'}`}
+                      aria-hidden
+                    >
+                      ⌄
+                    </span>
+                  </button>
+
+                  {isRepliesExpanded ? (
+                    <div className="mt-2">
+                      <CommentList
+                        blockId={blockId}
+                        comments={comment.replies}
+                        currentUsername={currentUsername}
+                        isAuthenticated={isAuthenticated}
+                        onCommentsChanged={onCommentsChanged}
+                        depth={depth + 1}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
             </li>
           );
         })}

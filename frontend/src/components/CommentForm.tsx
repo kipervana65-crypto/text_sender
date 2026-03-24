@@ -3,7 +3,23 @@ import { api } from '../services/api';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { StatusMessage } from './StatusMessage';
 
-export const CommentForm = ({ blockId, onSuccess }: { blockId: string; onSuccess: () => Promise<void> }) => {
+type CommentFormProps = {
+  blockId: string;
+  onSuccess: () => Promise<void>;
+  parentId?: number;
+  label?: string;
+  buttonText?: string;
+  className?: string;
+};
+
+export const CommentForm = ({
+  blockId,
+  onSuccess,
+  parentId,
+  label = 'Добавить комментарий',
+  buttonText = 'Отправить',
+  className = 'mb-4 rounded border bg-white p-3',
+}: CommentFormProps) => {
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +30,7 @@ export const CommentForm = ({ blockId, onSuccess }: { blockId: string; onSuccess
     setError(null);
 
     try {
-      await api.createComment(blockId, { comment });
+      await api.createComment(blockId, { comment }, parentId);
       setComment('');
       await onSuccess();
     } catch (e) {
@@ -25,9 +41,9 @@ export const CommentForm = ({ blockId, onSuccess }: { blockId: string; onSuccess
   };
 
   return (
-    <form className="mb-4 rounded border bg-white p-3" onSubmit={submit}>
+    <form className={className} onSubmit={submit}>
       {error ? <StatusMessage message={error} type="error" /> : null}
-      <label className="mb-1 block text-sm text-slate-700">Добавить комментарий</label>
+      <label className="mb-1 block text-sm text-slate-700">{label}</label>
       <textarea
         className="min-h-24 w-full rounded border px-3 py-2"
         value={comment}
@@ -35,7 +51,7 @@ export const CommentForm = ({ blockId, onSuccess }: { blockId: string; onSuccess
         required
       />
       <button className="mt-2 rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-50" disabled={loading}>
-        {loading ? 'Отправка...' : 'Отправить'}
+        {loading ? 'Отправка...' : buttonText}
       </button>
     </form>
   );

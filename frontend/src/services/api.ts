@@ -132,11 +132,29 @@ export const api = {
 
   getBlock: (id: string) => request<BlockResponse>(`/blocks/text_block?uuid=${id}`),
 
-  getComments: (id: string, page = 1, pageSize = 20) => request<CommentListResponse>(`/comment/get_comments?id_block=${id}&page=${page}&page_size=${pageSize}`),
+  getComments: (id: string, page = 1, pageSize = 20, parentId?: number) => {
+    const params = new URLSearchParams({
+      id_block: id,
+      page: String(page),
+      page_size: String(pageSize),
+    });
+
+    if (typeof parentId === 'number') {
+      params.set('parent_id', String(parentId));
+    }
+
+    return request<CommentListResponse>(`/comment/get_comments?${params.toString()}`);
+  },
 
 
-  createComment: (blockId: string, payload: CreateCommentPayload) =>
-    request<CommentResponse>(`/comment/create?id_block=${blockId}`, { method: 'POST', body: payload, auth: true }),
+  createComment: (blockId: string, payload: CreateCommentPayload, parentId?: number) => {
+    const params = new URLSearchParams({ id_block: blockId });
+    if (typeof parentId === 'number') {
+      params.set('parent_id', String(parentId));
+    }
+
+    return request<CommentResponse>(`/comment/create?${params.toString()}`, { method: 'POST', body: payload, auth: true });
+  },
 
   updateComment: (commentId: number, payload: CreateCommentPayload) =>
     request<CommentResponse>(`/comment/update?id_comment=${commentId}`, { method: 'PUT', body: payload, auth: true }),
