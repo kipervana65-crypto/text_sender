@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { ThreadedComment } from '../types/api';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { CommentForm } from './CommentForm';
+import { ReplyToggle } from './ReplyToggle';
 import { StatusMessage } from './StatusMessage';
 
 type CommentListProps = {
@@ -86,14 +87,6 @@ export const CommentList = ({
       }
       return next;
     });
-  };
-
-  const getRepliesLabel = (count: number) => {
-    const mod10 = count % 10;
-    const mod100 = count % 100;
-    if (mod10 === 1 && mod100 !== 11) return `${count} ответ`;
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${count} ответа`;
-    return `${count} ответов`;
   };
 
   if (!comments.length && depth === 0) {
@@ -198,19 +191,11 @@ export const CommentList = ({
 
               {hasReplies ? (
                 <div className="mt-3">
-                  <button
-                    type="button"
-                    className="inline-flex items-center gap-1 text-sm text-blue-600 transition hover:text-blue-700"
-                    onClick={() => toggleReplies(comment.id)}
-                  >
-                    {isRepliesExpanded ? 'Скрыть ответы' : `Посмотреть ${getRepliesLabel(comment.replies.length)}`}
-                    <span
-                      className={`inline-block text-xs transition-transform ${isRepliesExpanded ? 'rotate-180' : 'rotate-0'}`}
-                      aria-hidden
-                    >
-                      ⌄
-                    </span>
-                  </button>
+                  <ReplyToggle
+                    isExpanded={isRepliesExpanded}
+                    repliesCount={comment.replies.length}
+                    onToggle={() => toggleReplies(comment.id)}
+                  />
 
                   {isRepliesExpanded ? (
                     <div className="mt-2">
