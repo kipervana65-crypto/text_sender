@@ -14,15 +14,32 @@ router = APIRouter()
 @router.post('/create', response_model=ResponseComment)
 async def create_comment(com: CreateComment,
                          id_block: uuid.UUID,
+                         parent_id: int = None,
                          session: AsyncSession = Depends(get_db),
                          user: User = Depends(get_current_user)):
     stmt=await session.execute(select(BlockOfText).where(BlockOfText.id==id_block, BlockOfText.is_active==True))
     block=stmt.scalar_one_or_none()
 
     if not block:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='block not found')
 
-    comment=Comment(comment=com.comment, block_id=id_block, user_id=user.id)
+    if parent_id:
+        stmt=await session.execute(select(Comment).where(Comment.id==parent_id, Comment.is_active==True))
+        parent=stmt.scalar_one_or_none()
+
+        if not parent:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='comment not found')
+
+        if parent.block_id != id_block:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="parent comment does not belong to this block"
+            )
+
+        comment = Comment(comment=com.comment, block_id=id_block, user_id=user.id, parent_id=parent_id)
+
+    else:
+        comment=Comment(comment=com.comment, block_id=id_block, user_id=user.id)
     session.add(comment)
     await session.commit()
     await session.refresh(comment)
@@ -35,6 +52,7 @@ async def create_comment(com: CreateComment,
 @router.get('/get_comments', response_model=CommentList)
 async def get_comments(
         id_block: uuid.UUID,
+        parent_id: int = None,
         page: int = Query(1, ge=1),
         page_size: int = Query(20, ge=1, le=100),
         session: AsyncSession = Depends(get_db)):
@@ -44,10 +62,24 @@ async def get_comments(
     block=stmt.scalar_one_or_none()
 
     if not block:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='block not found')
+    filters=[Comment.is_active == True]
+
+    if parent_id:
+        stmt=await session.execute(select(Comment).where(Comment.id==parent_id, Comment.is_active==True))
+        parent=stmt.scalar_one_or_none()
+
+        if not parent:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='comment not found')
+        filters.append(Comment.parent_id==parent_id)
+
+    else:
+        filters.append(Comment.block_id==id_block)
+        filters.append(Comment.parent_id.is_(None))
+
 
     total=await session.scalar(select(func.count(Comment.id))
-                               .where(Comment.block_id == id_block, Comment.is_active == True)
+                               .where(*filters)
                                )
 
     stmt=await session.execute(
@@ -58,7 +90,7 @@ async def get_comments(
      User.username.label("username"),
     )
     .join(User, Comment.user_id == User.id)
-        .where(Comment.block_id==id_block, Comment.is_active==True)
+        .where(*filters)
         .order_by(Comment.id)
         .offset((page - 1) * page_size)
         .limit(page_size)
@@ -111,9 +143,7 @@ async def delete_comment(id_comment: int,
     if not comment:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    await session.execute(update(Comment).values(is_active=False).where(Comment.id==id_comment,
-                                                         Comment.is_active==True,
-                                                        Comment.user_id==user.id))
+    comment.is_active=False
     await session.commit()
 
     return {'message': 'Ok'}

@@ -13,6 +13,9 @@ class Comment(Base):
     is_active: Mapped[bool] = mapped_column(default=True)
     block_id: Mapped[uuid.UUID] = mapped_column(ForeignKey('blocks_of_text.id'))
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    parent_id: Mapped[int|None] = mapped_column(ForeignKey('comments.id'), nullable=True)
 
     block: Mapped['BlockOfText'] = relationship(back_populates='comments')
     user: Mapped['User'] = relationship(back_populates='comments')
+    parent_comment: Mapped['Comment|None'] = relationship(remote_side=[id], back_populates='subcomments')
+    subcomments: Mapped[list['Comment']|None] = relationship(back_populates='parent_comment')

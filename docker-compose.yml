@@ -9,9 +9,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "5555:5432"
+    networks:
+      - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U text_sender -d text_sender"]
+      test: ["CMD-SHELL", "pg_isready -U iv -d text_sender"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -29,6 +31,8 @@ services:
         condition: service_healthy
     ports:
       - "8000:8000"
+    networks:
+      - app_network
 
   frontend:
     build:
@@ -42,5 +46,12 @@ services:
     ports:
       - "5173:80"
 
+    networks:
+      - app_network
+
 volumes:
   postgres_data:
+
+networks:
+  app_network:
+    driver: bridge
