@@ -9,6 +9,28 @@ const getShareLink = (block: BlockResponse) => {
   return `${window.location.origin}/blocks/${idFromUrl}`;
 };
 
+const copyText = async (text: string) => {
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textArea = document.createElement('textarea');
+  textArea.value = text;
+  textArea.setAttribute('readonly', '');
+  textArea.style.position = 'fixed';
+  textArea.style.left = '-9999px';
+  document.body.append(textArea);
+  textArea.select();
+
+  const copied = document.execCommand('copy');
+  textArea.remove();
+
+  if (!copied) {
+    throw new Error('Copy command failed');
+  }
+};
+
 export const CreateBlockForm = () => {
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
@@ -61,8 +83,9 @@ export const CreateBlockForm = () => {
 
   const handleCopyLink = async (link: string) => {
     try {
-      await navigator.clipboard.writeText(link);
+      await copyText(link);
       setCopiedLink(link);
+      setError(null);
     } catch {
       setError('Не удалось скопировать ссылку');
     }
