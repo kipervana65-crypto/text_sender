@@ -2,30 +2,31 @@ services:
   db:
     image: postgres:16-alpine
     container_name: text_sender_db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: text_sender
       POSTGRES_USER: iv
       POSTGRES_PASSWORD: 12345
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5555:5432"
     networks:
       - app_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U iv -d text_sender"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
     container_name: text_sender_backend
+    restart: unless-stopped
     environment:
       DATABASE_URL: postgresql+asyncpg://iv:12345@db:5432/text_sender
-      SECRET_KEY: super_secret_key_change_me
+      SECRET_KEY: super_secret_key_change_me_very_long_and_random
     depends_on:
       db:
         condition: service_healthy
@@ -33,19 +34,22 @@ services:
       - "8000:8000"
     networks:
       - app_network
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: http://localhost:8000
+        VITE_API_BASE_URL: http://153.80.251.221:8000
     container_name: text_sender_frontend
+    restart: unless-stopped
     depends_on:
       - backend
     ports:
-      - "5173:80"
-
+      - "80:80"
     networks:
       - app_network
 

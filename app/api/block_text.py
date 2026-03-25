@@ -16,7 +16,7 @@ async def crete_block(block: CreateBlock, session: AsyncSession = Depends(get_db
     post.user=user
     session.add(post)
     await session.flush()
-    post.url_block=f'http://127.0.0.1:8000/blocks/text_block/{post.id}'
+    post.url_block=f'http://153.80.251.221:8000/blocks/text_block/{post.id}'
     await session.commit()
 
     return post

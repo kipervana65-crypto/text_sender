@@ -11,10 +11,11 @@ load_dotenv()
 
 config = context.config
 
-# Берем sync URL для Alembic
-database_url = os.getenv("ALEMBIC_DATABASE_URL")
+database_url = os.getenv("ALEMBIC_DATABASE_URL") or os.getenv("DATABASE_URL")
+
 if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+    sync_url = database_url.replace("postgresql+asyncpg", "postgresql+psycopg")
+    config.set_main_option("sqlalchemy.url", sync_url)
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
