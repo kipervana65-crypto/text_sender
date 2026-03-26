@@ -16,7 +16,7 @@ async def crete_block(block: CreateBlock, session: AsyncSession = Depends(get_db
     post.user=user
     session.add(post)
     await session.flush()
-    post.url_block=f'http://153.80.251.221:80/blocks/text_block/{post.id}'
+    post.url_block=f'http://153.80.251.221:80/blocks/{post.id}'
     await session.commit()
 
     return post
@@ -33,7 +33,7 @@ async def get_blocks(user: User = Depends(get_current_user), session: AsyncSessi
 async def get_block_by_query(uuid: uuid.UUID = Query(...), session: AsyncSession = Depends(get_db)):
     stmt = select(BlockOfText).where(BlockOfText.id == uuid, BlockOfText.is_active == True)
     result = (await session.execute(stmt)).scalar_one_or_none()
-
+    
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
@@ -43,6 +43,17 @@ async def get_block_by_query(uuid: uuid.UUID = Query(...), session: AsyncSession
 async def get_block(uuid: uuid.UUID, session: AsyncSession = Depends(get_db)):
     stmt=select(BlockOfText).where(BlockOfText.id==uuid, BlockOfText.is_active==True)
     result=(await session.execute(stmt)).scalar_one_or_none()
+
+    if not result:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    return result
+
+
+@router.get('/{uuid}', response_model=ResponseBlock)
+async def get_block_by_front_path(uuid: uuid.UUID, session: AsyncSession = Depends(get_db)):
+    stmt = select(BlockOfText).where(BlockOfText.id == uuid, BlockOfText.is_active == True)
+    result = (await session.execute(stmt)).scalar_one_or_none()
 
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)

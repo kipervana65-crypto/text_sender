@@ -5,8 +5,13 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import { StatusMessage } from './StatusMessage';
 
 const getShareLink = (block: BlockResponse) => {
-  const idFromUrl = block.url_block.split('/').slice(-1)[0] ?? block.id;
-  return `${window.location.origin}/blocks/${idFromUrl}`;
+  const parsedUrl = new URL(block.url_block, window.location.origin);
+  const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+  const idFromPath = pathParts[pathParts.length - 1];
+  const idFromQuery = parsedUrl.searchParams.get('uuid');
+  const blockId = idFromQuery ?? idFromPath ?? block.id;
+
+  return `${window.location.origin}/blocks/${blockId}`;
 };
 
 const copyText = async (text: string) => {
