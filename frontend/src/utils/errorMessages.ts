@@ -9,6 +9,10 @@ const statusMessages: Record<number, string> = {
 
 export const getUserFriendlyError = (error: unknown): string => {
   if (error instanceof ApiError) {
+    if (error.status === 401 && error.endpoint === '/auth/token') {
+      return error.message || 'Неверный email или пароль';
+    }
+
     if (error.status === 400) {
       return error.message || 'Неверные данные';
     }

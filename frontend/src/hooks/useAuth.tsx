@@ -6,7 +6,7 @@ type AuthContextType = {
   user: UserResponse | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => void;
 };
@@ -38,8 +38,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     void bootstrap();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const tokens = await api.login(email, password);
+  const login = async (identifier: string, password: string) => {
+    const tokens = await api.login(identifier, password);
     tokenStorage.save(tokens.access_token, tokens.refresh_token);
     const me = await api.me();
     setUser(me);
