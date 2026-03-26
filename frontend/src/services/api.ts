@@ -10,7 +10,9 @@ import {
   UserResponse,
 } from '../types/api';
 
+const baseApiUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 const REFRESH_TOKEN_KEY = 'text_sender_refresh_token';
+const ACCESS_TOKEN_STORAGE_KEY = 'text_sender_access_token';
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
   body?: unknown;
@@ -34,7 +36,7 @@ const parseErrorMessage = (responseData: unknown): string => {
 
 const request = async <T>(endpoint: string, options: RequestOptions = {}): Promise<T> => {
   const { method = 'GET', body, auth = false, headers = {} } = options;
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${baseApiUrl}${endpoint}`;
 
   const requestHeaders = new Headers(headers);
   if (body && !(body instanceof FormData) && !(body instanceof URLSearchParams)) {
@@ -42,7 +44,7 @@ const request = async <T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 
   if (auth) {
-    const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+    const token = localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
     if (token) requestHeaders.set('Authorization', `Bearer ${token}`);
   }
 
@@ -91,14 +93,14 @@ const request = async <T>(endpoint: string, options: RequestOptions = {}): Promi
 
 export const tokenStorage = {
   save: (accessToken: string, refreshToken: string) => {
-    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+    localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
   },
   clear: () => {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
   },
-  getAccessToken: () => localStorage.getItem(ACCESS_TOKEN_KEY),
+  getAccessToken: () => localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY),
 };
 
 export const api = {
