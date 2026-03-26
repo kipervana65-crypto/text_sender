@@ -9,7 +9,8 @@ import {
   TokenResponse,
   UserResponse,
 } from '../types/api';
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://153.80.251.221:8000";
+const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = 'text_sender_refresh_token';
 type RequestOptions = {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
