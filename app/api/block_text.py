@@ -16,7 +16,7 @@ async def crete_block(block: CreateBlock, session: AsyncSession = Depends(get_db
     post.user=user
     session.add(post)
     await session.flush()
-    post.url_block=f'http://153.80.251.221:8000/blocks/text_block/{post.id}'
+    post.url_block=f'http://153.80.251.221:80/blocks/text_block?uuid={post.id}'
     await session.commit()
 
     return post
@@ -29,7 +29,7 @@ async def get_blocks(user: User = Depends(get_current_user), session: AsyncSessi
     return r
 
 
-@router.get('/text_block', response_model=ResponseBlock)
+@router.get('/text_block/{uuid}', response_model=ResponseBlock)
 async def get_block(uuid: uuid.UUID, session: AsyncSession = Depends(get_db)):
     stmt=select(BlockOfText).where(BlockOfText.id==uuid, BlockOfText.is_active==True)
     result=(await session.execute(stmt)).scalar_one_or_none()
