@@ -7,7 +7,7 @@ import { StatusMessage } from '../components/StatusMessage';
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +18,7 @@ export const LoginPage = () => {
     setError(null);
 
     try {
-      await login(email, password);
+      await login(identifier.trim(), password);
       navigate('/');
     } catch (e) {
       setError(getUserFriendlyError(e));
@@ -33,8 +33,14 @@ export const LoginPage = () => {
       <form className="space-y-4" onSubmit={onSubmit}>
         {error ? <StatusMessage message={error} type="error" /> : null}
         <div>
-          <label className="mb-1 block text-sm">Email</label>
-          <input className="w-full rounded border px-3 py-2" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <label className="mb-1 block text-sm">Email или username</label>
+          <input
+            className="w-full rounded border px-3 py-2"
+            type="text"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            required
+          />
         </div>
         <div>
           <label className="mb-1 block text-sm">Пароль</label>

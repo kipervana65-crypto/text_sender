@@ -105,9 +105,9 @@ export const tokenStorage = {
 export const api = {
   register: (payload: RegisterPayload) => request<UserResponse>('/auth/register', { method: 'POST', body: payload }),
 
-  login: (email: string, password: string) => {
+  login: (identifier: string, password: string) => {
     const formData = new URLSearchParams();
-    formData.append('username', email);
+    formData.append('username', identifier);
     formData.append('password', password);
 
     return request<TokenResponse>('/auth/token', {

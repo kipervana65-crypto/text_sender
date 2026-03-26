@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from ..schemas.auth import Token
 from ..schemas.user import UserResponse, UserCreate
 from jose import jwt, JWTError
@@ -66,7 +66,12 @@ async def login(
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(
-        select(User).where(User.email == form_data.username)
+        select(User).where(
+            or_(
+                User.email == form_data.username,
+                User.username == form_data.username
+            )
+        )
     )
     user = result.scalar_one_or_none()
 
