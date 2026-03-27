@@ -2,6 +2,7 @@ from ..session import Base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, Text, DateTime, String, func, UUID
 from datetime import datetime
+from .like_model import like_model
 import uuid
 
 class BlockOfText(Base):
@@ -20,4 +21,4 @@ class BlockOfText(Base):
 
     user: Mapped['User'] = relationship(back_populates='blocks')
     comments: Mapped[list['Comment']] = relationship(back_populates='block')
-    user_likes: Mapped[list['User']|None] = relationship(secondary='like_model', back_populates='block_likes')
+    user_likes: Mapped[list['User']] = relationship(secondary=like_model, back_populates='block_likes')

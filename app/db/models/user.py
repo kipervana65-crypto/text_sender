@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.orm import relationship, Mapped
 from sqlalchemy.sql import func
+from .like_model import like_model
 from ..session import Base
 
 
@@ -16,4 +17,4 @@ class User(Base):
 
     blocks: Mapped[list['BlockOfText']] = relationship(back_populates='user')
     comments: Mapped[list['Comment']] = relationship(back_populates='user')
-    block_likes: Mapped[list['BlockOfText']|None] = relationship(secondary='like_model', back_populates='user_likes')
+    block_likes: Mapped[list['BlockOfText']] = relationship(secondary=like_model, back_populates='user_likes')
