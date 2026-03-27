@@ -75,3 +75,7 @@ export interface CommentListResponse {
 export interface ThreadedComment extends CommentResponse {
   replies: ThreadedComment[];
 }
+
+export interface LikeTotalResponse {
+  like_total: number;
+}

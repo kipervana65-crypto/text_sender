@@ -16,6 +16,8 @@ export const BlockPage = () => {
 
   const [block, setBlock] = useState<BlockResponse | null>(null);
   const [comments, setComments] = useState<ThreadedComment[]>([]);
+  const [likesCount, setLikesCount] = useState(0);
+  const [likesActionLoading, setLikesActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,15 +46,48 @@ export const BlockPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const [blockResponse, threadedComments] = await Promise.all([api.getBlock(id), loadCommentTree(id)]);
+      const [blockResponse, threadedComments, likesResponse] = await Promise.all([
+        api.getBlock(id),
+        loadCommentTree(id),
+        api.getTotalLikes(id),
+      ]);
       setBlock(blockResponse);
       setComments(threadedComments);
+      setLikesCount(likesResponse.like_total);
     } catch (e) {
       setError(getUserFriendlyError(e));
     } finally {
       setLoading(false);
     }
   }, [id, loadCommentTree]);
+
+  const handleLike = useCallback(async () => {
+    setLikesActionLoading(true);
+    setError(null);
+    try {
+      await api.addLike(id);
+      const likesResponse = await api.getTotalLikes(id);
+      setLikesCount(likesResponse.like_total);
+    } catch (e) {
+      setError(getUserFriendlyError(e));
+    } finally {
+      setLikesActionLoading(false);
+    }
+  }, [id]);
+
+  const handleUnlike = useCallback(async () => {
+    setLikesActionLoading(true);
+    setError(null);
+    try {
+      await api.removeLike(id);
+      const likesResponse = await api.getTotalLikes(id);
+      setLikesCount(likesResponse.like_total);
+    } catch (e) {
+      setError(getUserFriendlyError(e));
+    } finally {
+      setLikesActionLoading(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     void loadData();
@@ -64,7 +99,15 @@ export const BlockPage = () => {
 
   return (
     <section>
-      <BlockView block={block} commentsCount={countAllComments(comments)} />
+      <BlockView
+        block={block}
+        commentsCount={countAllComments(comments)}
+        likesCount={likesCount}
+        isAuthenticated={isAuthenticated}
+        onLike={handleLike}
+        onUnlike={handleUnlike}
+        likesActionLoading={likesActionLoading}
+      />
       <h2 className="mb-2 text-lg font-semibold">Комментарии</h2>
       {isAuthenticated ? (
         <CommentForm blockId={id} onSuccess={loadData} />
