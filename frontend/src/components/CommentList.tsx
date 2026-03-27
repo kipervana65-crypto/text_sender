@@ -28,7 +28,20 @@ export const CommentList = ({
   const [editingValue, setEditingValue] = useState('');
   const [busyCommentId, setBusyCommentId] = useState<number | null>(null);
   const [replyingCommentId, setReplyingCommentId] = useState<number | null>(null);
+  const [expandedCommentIds, setExpandedCommentIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
+
+  const toggleReplies = (commentId: number) => {
+    setExpandedCommentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(commentId)) {
+        next.delete(commentId);
+      } else {
+        next.add(commentId);
+      }
+      return next;
+    });
+  };
 
   const startEdit = (comment: ThreadedComment) => {
     setEditingCommentId(comment.id);
@@ -91,6 +104,8 @@ export const CommentList = ({
           const isBusy = busyCommentId === comment.id;
           const isReplying = replyingCommentId === comment.id;
           const canReply = depth < maxReplyDepth;
+          const hasReplies = comment.replies.length > 0;
+          const isRepliesExpanded = expandedCommentIds.has(comment.id);
 
           return (
             <li key={comment.id} className="rounded border bg-white p-3">
@@ -138,6 +153,18 @@ export const CommentList = ({
                         {isReplying ? 'Скрыть ответ' : 'Ответить'}
                       </button>
                     ) : null}
+                    {hasReplies ? (
+                      <button
+                        type="button"
+                        className="rounded border px-3 py-1 text-sm text-slate-700 disabled:opacity-50"
+                        onClick={() => toggleReplies(comment.id)}
+                        disabled={isBusy}
+                      >
+                        {isRepliesExpanded
+                          ? 'Скрыть ответы'
+                          : `Посмотреть ответы (${comment.replies.length})`}
+                      </button>
+                    ) : null}
                     {isOwnComment ? (
                       <>
                         <button
@@ -176,7 +203,7 @@ export const CommentList = ({
                 />
               ) : null}
 
-              {comment.replies.length ? (
+              {hasReplies && isRepliesExpanded ? (
                 <div className="mt-3">
                   <CommentList
                     blockId={blockId}
