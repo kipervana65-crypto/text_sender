@@ -5,6 +5,7 @@ type BlockViewProps = {
   commentsCount: number;
   likesCount: number;
   isAuthenticated: boolean;
+  isLikeDisabled: boolean;
   onLike: () => void;
   onUnlike: () => void;
   likesActionLoading: boolean;
@@ -15,6 +16,7 @@ export const BlockView = ({
   commentsCount,
   likesCount,
   isAuthenticated,
+  isLikeDisabled,
   onLike,
   onUnlike,
   likesActionLoading,
@@ -30,8 +32,8 @@ export const BlockView = ({
       <div className="mt-3 flex gap-2">
         <button
           type="button"
-          className="rounded border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50"
-          disabled={likesActionLoading}
+          className="rounded border border-slate-300 px-3 py-1.5 text-sm disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-500"
+          disabled={likesActionLoading || isLikeDisabled}
           onClick={onLike}
         >
           Поставить лайк
