@@ -7,7 +7,7 @@ import { Loader } from '../components/Loader';
 import { StatusMessage } from '../components/StatusMessage';
 import { useAuth } from '../hooks/useAuth';
 import { api } from '../services/api';
-import { BlockResponse, CommentResponse, ThreadedComment } from '../types/api';
+import { ApiError, BlockResponse, CommentResponse, ThreadedComment } from '../types/api';
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 export const BlockPage = () => {
@@ -17,9 +17,11 @@ export const BlockPage = () => {
   const [block, setBlock] = useState<BlockResponse | null>(null);
   const [comments, setComments] = useState<ThreadedComment[]>([]);
   const [likesCount, setLikesCount] = useState(0);
+  const [isLikeDisabled, setIsLikeDisabled] = useState(false);
   const [likesActionLoading, setLikesActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const loadCommentTree = useCallback(async (blockId: string, parentId?: number): Promise<ThreadedComment[]> => {
     const fetchBranch = async (currentParentId?: number): Promise<ThreadedComment[]> => {
@@ -44,7 +46,9 @@ export const BlockPage = () => {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setLoadError(null);
+    setActionError(null);
+    setIsLikeDisabled(false);
     try {
       const [blockResponse, threadedComments, likesResponse] = await Promise.all([
         api.getBlock(id),
@@ -55,7 +59,7 @@ export const BlockPage = () => {
       setComments(threadedComments);
       setLikesCount(likesResponse.like_total);
     } catch (e) {
-      setError(getUserFriendlyError(e));
+      setLoadError(getUserFriendlyError(e));
     } finally {
       setLoading(false);
     }
@@ -63,13 +67,18 @@ export const BlockPage = () => {
 
   const handleLike = useCallback(async () => {
     setLikesActionLoading(true);
-    setError(null);
+    setActionError(null);
     try {
       await api.addLike(id);
       const likesResponse = await api.getTotalLikes(id);
       setLikesCount(likesResponse.like_total);
+      setIsLikeDisabled(true);
     } catch (e) {
-      setError(getUserFriendlyError(e));
+      if (e instanceof ApiError && e.status === 400 && e.message === 'Already liked') {
+        setIsLikeDisabled(true);
+        return;
+      }
+      setActionError(getUserFriendlyError(e));
     } finally {
       setLikesActionLoading(false);
     }
@@ -77,13 +86,14 @@ export const BlockPage = () => {
 
   const handleUnlike = useCallback(async () => {
     setLikesActionLoading(true);
-    setError(null);
+    setActionError(null);
     try {
       await api.removeLike(id);
       const likesResponse = await api.getTotalLikes(id);
       setLikesCount(likesResponse.like_total);
+      setIsLikeDisabled(false);
     } catch (e) {
-      setError(getUserFriendlyError(e));
+      setActionError(getUserFriendlyError(e));
     } finally {
       setLikesActionLoading(false);
     }
@@ -94,16 +104,18 @@ export const BlockPage = () => {
   }, [loadData]);
 
   if (loading) return <Loader />;
-  if (error) return <StatusMessage message={error} type="error" />;
+  if (loadError) return <StatusMessage message={loadError} type="error" />;
   if (!block) return <StatusMessage message="Контент не найден" type="error" />;
 
   return (
     <section>
+      {actionError ? <StatusMessage message={actionError} type="error" /> : null}
       <BlockView
         block={block}
         commentsCount={countAllComments(comments)}
         likesCount={likesCount}
         isAuthenticated={isAuthenticated}
+        isLikeDisabled={isLikeDisabled}
         onLike={handleLike}
         onUnlike={handleUnlike}
         likesActionLoading={likesActionLoading}
