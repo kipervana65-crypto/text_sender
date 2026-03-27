@@ -1,6 +1,7 @@
 import {
   ApiError,
   BlockResponse,
+  LikeTotalResponse,
   CommentListResponse,
   CommentResponse,
   CreateBlockPayload,
@@ -159,4 +160,13 @@ export const api = {
 
   deleteComment: (commentId: number) =>
     request<{ message: string }>(`/comment/delete?id_comment=${commentId}`, { method: 'DELETE', auth: true }),
+
+  addLike: (blockId: string) =>
+    request<{ massage: string }>(`/like/add_like?block_id=${blockId}`, { method: 'POST', auth: true }),
+
+  removeLike: (blockId: string) =>
+    request<{ massage: string }>(`/like/delete_like?block_id=${blockId}`, { method: 'DELETE', auth: true }),
+
+  getTotalLikes: (blockId: string) =>
+    request<LikeTotalResponse>(`/like/get_total_like?id_block=${blockId}`),
 };
