@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { StatusMessage } from '../components/StatusMessage';
+import { ApiError } from '../types/api';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
@@ -11,17 +12,23 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [verifyEmailLink, setVerifyEmailLink] = useState<string | null>(null);
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
+    setVerifyEmailLink(null);
 
     try {
       await login(identifier.trim(), password);
       navigate('/');
     } catch (e) {
       setError(getUserFriendlyError(e));
+
+      if (e instanceof ApiError && e.message === 'Email is not verified' && identifier.includes('@')) {
+        setVerifyEmailLink(`/verify-email?email=${encodeURIComponent(identifier.trim())}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -32,6 +39,12 @@ export const LoginPage = () => {
       <h1 className="mb-4 text-xl font-semibold">Вход</h1>
       <form className="space-y-4" onSubmit={onSubmit}>
         {error ? <StatusMessage message={error} type="error" /> : null}
+        {verifyEmailLink ? (
+          <StatusMessage
+            type="info"
+            message="Перейдите на страницу подтверждения email и запросите код для входа в аккаунт."
+          />
+        ) : null}
         <div>
           <label className="mb-1 block text-sm">Email или username</label>
           <input
@@ -62,6 +75,14 @@ export const LoginPage = () => {
           Зарегистрироваться
         </Link>
       </p>
+      {verifyEmailLink ? (
+        <p className="mt-2 text-sm text-slate-600">
+          Не подтверждён email?{' '}
+          <Link className="text-slate-900 underline" to={verifyEmailLink}>
+            Подтвердить почту
+          </Link>
+        </p>
+      ) : null}
     </section>
   );
 };

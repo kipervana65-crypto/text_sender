@@ -13,14 +13,21 @@ export const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isGmailEmail = /@gmail\.com$/i.test(email.trim());
+
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
+      if (!isGmailEmail) {
+        setError('Для регистрации и подтверждения почты используйте Gmail (@gmail.com)');
+        return;
+      }
+
       await register(email, username, password);
-      navigate('/');
+      navigate(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } catch (e) {
       setError(getUserFriendlyError(e));
     } finally {
@@ -31,6 +38,10 @@ export const RegisterPage = () => {
   return (
     <section className="mx-auto max-w-md rounded border bg-white p-4">
       <h1 className="mb-4 text-xl font-semibold">Регистрация</h1>
+      <StatusMessage
+        message="Важно: подтверждение аккаунта работает только для Gmail-адресов (@gmail.com)."
+        type="warning"
+      />
       <form className="space-y-4" onSubmit={onSubmit}>
         {error ? <StatusMessage message={error} type="error" /> : null}
         <div>

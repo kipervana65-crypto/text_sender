@@ -9,14 +9,16 @@ Frontend для backend API из этого репозитория.
 - React Router
 
 ## Переменные окружения
-Скопируйте `.env.example` в `.env`:
+Скопируйте `frontend/.env.example` в `frontend/.env`:
 
 ```bash
-cp .env.example .env
+cp frontend/.env.example frontend/.env
 ```
 
 Доступные переменные:
 - `VITE_API_BASE_URL` — базовый URL backend API (по умолчанию `http://127.0.0.1:8000`).
+
+> Для работы подтверждения email нужен backend `.env` в корне проекта (см. корневой `README.md` и `.env.example`).
 
 ## Установка и запуск
 ```bash
