@@ -12,6 +12,7 @@ type CommentListProps = {
   isAuthenticated: boolean;
   onCommentsChanged: () => Promise<void>;
   depth?: number;
+  maxReplyDepth?: number;
 };
 
 export const CommentList = ({
@@ -21,6 +22,7 @@ export const CommentList = ({
   isAuthenticated,
   onCommentsChanged,
   depth = 0,
+  maxReplyDepth = 1,
 }: CommentListProps) => {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState('');
@@ -88,6 +90,7 @@ export const CommentList = ({
           const isEditing = editingCommentId === comment.id;
           const isBusy = busyCommentId === comment.id;
           const isReplying = replyingCommentId === comment.id;
+          const canReply = depth < maxReplyDepth;
 
           return (
             <li key={comment.id} className="rounded border bg-white p-3">
@@ -125,7 +128,7 @@ export const CommentList = ({
                 <>
                   <p className="text-sm text-slate-800">{comment.comment}</p>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {isAuthenticated ? (
+                    {isAuthenticated && canReply ? (
                       <button
                         type="button"
                         className="rounded border px-3 py-1 text-sm text-slate-700 disabled:opacity-50"
@@ -182,6 +185,7 @@ export const CommentList = ({
                     isAuthenticated={isAuthenticated}
                     onCommentsChanged={onCommentsChanged}
                     depth={depth + 1}
+                    maxReplyDepth={maxReplyDepth}
                   />
                 </div>
               ) : null}

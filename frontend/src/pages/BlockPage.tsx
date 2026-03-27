@@ -11,6 +11,7 @@ import { ApiError, BlockResponse, CommentResponse, ThreadedComment } from '../ty
 import { getUserFriendlyError } from '../utils/errorMessages';
 
 export const BlockPage = () => {
+  const MAX_REPLY_DEPTH = 1;
   const { id = '' } = useParams();
   const { isAuthenticated, user } = useAuth();
 
@@ -24,11 +25,11 @@ export const BlockPage = () => {
   const [actionError, setActionError] = useState<string | null>(null);
 
   const loadCommentTree = useCallback(async (blockId: string, parentId?: number): Promise<ThreadedComment[]> => {
-    const fetchBranch = async (currentParentId?: number): Promise<ThreadedComment[]> => {
+    const fetchBranch = async (currentParentId: number | undefined, depth: number): Promise<ThreadedComment[]> => {
       const response = await api.getComments(blockId, 1, 100, currentParentId);
       return Promise.all(
         response.items.map(async (comment: CommentResponse) => {
-          const replies = await fetchBranch(comment.id);
+          const replies = depth < MAX_REPLY_DEPTH ? await fetchBranch(comment.id, depth + 1) : [];
           return {
             ...comment,
             replies,
@@ -37,8 +38,8 @@ export const BlockPage = () => {
       );
     };
 
-    return fetchBranch(parentId);
-  }, []);
+    return fetchBranch(parentId, 0);
+  }, [MAX_REPLY_DEPTH]);
 
   const countAllComments = useCallback((items: ThreadedComment[]): number => {
     return items.reduce((total, item) => total + 1 + countAllComments(item.replies), 0);
@@ -132,6 +133,7 @@ export const BlockPage = () => {
         currentUsername={user?.username}
         isAuthenticated={isAuthenticated}
         onCommentsChanged={loadData}
+        maxReplyDepth={MAX_REPLY_DEPTH}
       />
     </section>
   );
