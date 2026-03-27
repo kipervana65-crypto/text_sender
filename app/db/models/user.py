@@ -13,6 +13,8 @@ class User(Base):
     hashed_password = Column(String)
     username = Column(String, unique=True)
     is_active = Column(Boolean, default=True)
+    is_verified = Column(Boolean, default=False)
+    code = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     blocks: Mapped[list['BlockOfText']] = relationship(back_populates='user')

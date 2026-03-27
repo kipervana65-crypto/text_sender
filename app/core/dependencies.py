@@ -28,8 +28,19 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
 
-    result = await db.execute(select(User).where(User.email == email, User.is_active==True))
+    result = await db.execute(select(User).where(User.email == email,
+                                                 User.is_active==True))
+
     user = result.scalar_one_or_none()
     if user is None:
         raise credentials_exception
+
+    if not user.is_verified:
+        raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Email is not verified",
+            headers={"X-Error-Code": "EMAIL_NOT_VERIFIED"}
+        )
+
+
     return user

@@ -8,6 +8,7 @@ from jose import jwt, JWTError
 
 
 from ..db.models.user import User
+from ..services.email_service import EmailSender
 from ..core.security import (
     verify_password,
     get_password_hash,
@@ -16,6 +17,7 @@ from ..core.security import (
 )
 from ..db.session import get_db
 from datetime import timedelta
+import random
 from ..core.config import settings
 from ..core.dependencies import get_current_user
 
@@ -49,16 +51,69 @@ async def register(
     # Хэшируем пароль
     hashed_password = get_password_hash(user_data.password)
 
+
     # Создаём пользователя
     db_user = User(
         email=user_data.email,
         hashed_password=hashed_password,
-        username=user_data.username
+        username=user_data.username,
     )
     db.add(db_user)
     await db.commit()
     await db.refresh(db_user)
     return db_user
+
+@router.post("/send_code")
+async def send_code(email: str,
+                    session: AsyncSession = Depends(get_db)):
+    stmt=await session.execute(select(User).where(User.email==email, User.is_active==True))
+    user=stmt.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail='user not found')
+
+    if user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already verified"
+        )
+
+    # Отправляем код
+    code=random.randint(100000, 999999)
+    email_sender=EmailSender()
+    email_sender.send_email_code(to_email=str(user.email), code=str(code))
+
+    user.code=code
+    await session.commit()
+
+    return {'message': 'the code was sent to the email'}
+
+@router.post('/verify_email')
+async def verify_email(email: str,
+                       code: int,
+                       session: AsyncSession = Depends(get_db)):
+    stmt=await session.execute(select(User).where(User.email==email, User.is_active==True))
+    user=stmt.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail='user not found')
+
+    if user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already verified"
+        )
+
+    if user.code!=code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code"
+        )
+
+    user.is_verified=True
+    user.code=None
+    await session.commit()
+    return {'message': 'email confirmed'}
 
 @router.post("/token", response_model=Token)
 async def login(
