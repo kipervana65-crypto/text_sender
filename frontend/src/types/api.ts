@@ -40,6 +40,10 @@ export interface RegisterPayload {
   password: string;
 }
 
+export interface ApiMessageResponse {
+  message: string;
+}
+
 export interface CreateBlockPayload {
   title: string;
   text: string;

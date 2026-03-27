@@ -7,6 +7,7 @@ import {
   CreateBlockPayload,
   CreateCommentPayload,
   RegisterPayload,
+  ApiMessageResponse,
   TokenResponse,
   UserResponse,
 } from '../types/api';
@@ -105,6 +106,14 @@ export const tokenStorage = {
 
 export const api = {
   register: (payload: RegisterPayload) => request<UserResponse>('/auth/register', { method: 'POST', body: payload }),
+
+  sendVerificationCode: (email: string) =>
+    request<ApiMessageResponse>(`/auth/send_code?email=${encodeURIComponent(email)}`, { method: 'POST' }),
+
+  verifyEmail: (email: string, code: string) => {
+    const parsedCode = Number(code);
+    return request<ApiMessageResponse>(`/auth/verify_email?email=${encodeURIComponent(email)}&code=${parsedCode}`, { method: 'POST' });
+  },
 
   login: (identifier: string, password: string) => {
     const formData = new URLSearchParams();
