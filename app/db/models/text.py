@@ -20,3 +20,4 @@ class BlockOfText(Base):
 
     user: Mapped['User'] = relationship(back_populates='blocks')
     comments: Mapped[list['Comment']] = relationship(back_populates='block')
+    user_likes: Mapped[list['User']|None] = relationship(secondary='like_model', back_populates='block_likes')

@@ -16,3 +16,4 @@ class User(Base):
 
     blocks: Mapped[list['BlockOfText']] = relationship(back_populates='user')
     comments: Mapped[list['Comment']] = relationship(back_populates='user')
+    block_likes: Mapped[list['BlockOfText']|None] = relationship(secondary='like_model', back_populates='user_likes')
