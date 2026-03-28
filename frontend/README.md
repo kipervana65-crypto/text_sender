@@ -17,6 +17,7 @@ cp frontend/.env.example frontend/.env
 
 Доступные переменные:
 - `VITE_API_BASE_URL` — базовый URL backend API (по умолчанию `http://127.0.0.1:8000`).
+  Если указать адрес без `http://` или `https://` (например, `127.0.0.1:8000`), фронтенд автоматически добавит `http://`.
 
 > Для работы подтверждения email нужен backend `.env` в корне проекта (см. корневой `README.md` и `.env.example`).
 
