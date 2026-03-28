@@ -11,7 +11,24 @@ import {
   TokenResponse,
   UserResponse,
 } from '../types/api';
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://153.80.251.221:8000";
+
+const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8000';
+
+const normalizeApiBaseUrl = (value?: string): string => {
+  const baseUrl = value?.trim();
+  if (!baseUrl) {
+    return DEFAULT_API_BASE_URL;
+  }
+
+  const withoutTrailingSlash = baseUrl.replace(/\/+$/, '');
+  if (/^https?:\/\//i.test(withoutTrailingSlash)) {
+    return withoutTrailingSlash;
+  }
+
+  return `http://${withoutTrailingSlash.replace(/^\/+/, '')}`;
+};
+
+const API_BASE_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL);
 const ACCESS_TOKEN_KEY = "access_token";
 const REFRESH_TOKEN_KEY = 'text_sender_refresh_token';
 type RequestOptions = {
