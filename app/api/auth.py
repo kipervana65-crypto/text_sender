@@ -8,7 +8,7 @@ from jose import jwt, JWTError
 
 
 from ..db.models.user import User
-from ..services.email_service import EmailSender
+from ..service.email_service import EmailSender
 from ..core.security import (
     verify_password,
     get_password_hash,

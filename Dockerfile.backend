@@ -17,6 +17,7 @@ ENV PATH="/root/.local/bin:${PATH}"
 
 COPY pyproject.toml ./
 RUN uv sync --no-dev
+RUN pip install python-dotenv
 
 COPY app ./app
 COPY alembic ./alembic

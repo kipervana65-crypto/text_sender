@@ -24,9 +24,8 @@ services:
       dockerfile: Dockerfile.backend
     container_name: text_sender_backend
     restart: unless-stopped
-    environment:
-      DATABASE_URL: postgresql+asyncpg://iv:12345@db:5432/text_sender
-      SECRET_KEY: super_secret_key_change_me_very_long_and_random
+    env_file:
+      - .env
     depends_on:
       db:
         condition: service_healthy
@@ -34,13 +33,9 @@ services:
       - "8000:8000"
     networks:
       - app_network
-
-    # 🔥 ВОТ ЭТО ГЛАВНОЕ
-    volumes:
-      - ./:/app
-
-    working_dir: /app
-
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     command: >
       sh -c "uv run alembic upgrade head &&
              uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
@@ -50,13 +45,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: http://153.80.251.221:8000
+        VITE_API_BASE_URL: http://localhost:8000
     container_name: text_sender_frontend
     restart: unless-stopped
     depends_on:
       - backend
     ports:
-      - "80:80"
+      - "5173:80"
     networks:
       - app_network
 

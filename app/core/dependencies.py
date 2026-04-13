@@ -7,6 +7,8 @@ from ..core.config import settings
 from ..schemas.auth import TokenData
 from ..db.models.user import User
 from sqlalchemy import select
+from ..repositories.block_repo import BlockOfTextRepository
+from ..service.block_service import BlockOfTextService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
@@ -44,3 +46,9 @@ async def get_current_user(
 
 
     return user
+
+def get_post_repo(session: AsyncSession = Depends(get_db)):
+    return BlockOfTextRepository(session)
+
+def get_post_service(repo: BlockOfTextRepository = Depends(get_post_repo)):
+    return BlockOfTextService(repo)

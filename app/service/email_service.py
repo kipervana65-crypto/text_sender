@@ -1,19 +1,17 @@
-import os
-from dotenv import load_dotenv
-
+from ..core.config import get_settings
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
 import smtplib
 
-load_dotenv()
+settings=get_settings()
 
 class EmailSender:
     def __init__(self):
-        self.SMTP_SERVER = os.getenv("SMTP_SERVER")
-        self.SMTP_PORT = int(os.getenv("SMTP_PORT"))
-        self.SMTP_USER = os.getenv("SMTP_USER")
-        self.SMTP_PASSWORD = os.getenv("SMTP_PASSWORD")
+        self.SMTP_SERVER = settings.SMTP_SERVER
+        self.SMTP_PORT = settings.SMTP_PORT
+        self.SMTP_USER = settings.SMTP_USER
+        self.SMTP_PASSWORD = settings.SMTP_PASSWORD
 
     def send_email_code(self, to_email: str, code: str):
         subject = "Подтверждение email"
