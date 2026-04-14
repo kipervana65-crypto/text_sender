@@ -18,7 +18,7 @@ export const BlockPage = () => {
   const [block, setBlock] = useState<BlockResponse | null>(null);
   const [comments, setComments] = useState<ThreadedComment[]>([]);
   const [likesCount, setLikesCount] = useState(0);
-  const [isLikeDisabled, setIsLikeDisabled] = useState(false);
+  const [hasLiked, setHasLiked] = useState(false);
   const [likesActionLoading, setLikesActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -49,7 +49,7 @@ export const BlockPage = () => {
     setLoading(true);
     setLoadError(null);
     setActionError(null);
-    setIsLikeDisabled(false);
+    setHasLiked(false);
     try {
       const [blockResponse, threadedComments, likesResponse] = await Promise.all([
         api.getBlock(id),
@@ -71,12 +71,11 @@ export const BlockPage = () => {
     setActionError(null);
     try {
       await api.addLike(id);
-      const likesResponse = await api.getTotalLikes(id);
-      setLikesCount(likesResponse.like_total);
-      setIsLikeDisabled(true);
+      setLikesCount((previousCount) => previousCount + 1);
+      setHasLiked(true);
     } catch (e) {
       if (e instanceof ApiError && e.status === 400 && e.message === 'Already liked') {
-        setIsLikeDisabled(true);
+        setHasLiked(true);
         return;
       }
       setActionError(getUserFriendlyError(e));
@@ -90,9 +89,8 @@ export const BlockPage = () => {
     setActionError(null);
     try {
       await api.removeLike(id);
-      const likesResponse = await api.getTotalLikes(id);
-      setLikesCount(likesResponse.like_total);
-      setIsLikeDisabled(false);
+      setLikesCount((previousCount) => Math.max(previousCount - 1, 0));
+      setHasLiked(false);
     } catch (e) {
       setActionError(getUserFriendlyError(e));
     } finally {
@@ -116,7 +114,7 @@ export const BlockPage = () => {
         commentsCount={countAllComments(comments)}
         likesCount={likesCount}
         isAuthenticated={isAuthenticated}
-        isLikeDisabled={isLikeDisabled}
+        hasLiked={hasLiked}
         onLike={handleLike}
         onUnlike={handleUnlike}
         likesActionLoading={likesActionLoading}
