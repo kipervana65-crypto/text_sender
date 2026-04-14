@@ -17,7 +17,8 @@ async def create_comment(com: CreateComment,
                          parent_id: int = None,
                          session: AsyncSession = Depends(get_db),
                          user: User = Depends(get_current_user)):
-    stmt=await session.execute(select(BlockOfText).where(BlockOfText.id==id_block, BlockOfText.is_active==True))
+    stmt=await session.execute(select(BlockOfText).where(BlockOfText.id==id_block,
+                                                         BlockOfText.is_active==True))
     block=stmt.scalar_one_or_none()
 
     if not block:

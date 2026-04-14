@@ -9,6 +9,9 @@ from ..db.models.user import User
 from sqlalchemy import select
 from ..repositories.block_repo import BlockOfTextRepository
 from ..service.block_service import BlockOfTextService
+from ..repositories.like_repo import LikeRepositories
+from ..service.like_service import LikeService
+
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
@@ -52,3 +55,10 @@ def get_post_repo(session: AsyncSession = Depends(get_db)):
 
 def get_post_service(repo: BlockOfTextRepository = Depends(get_post_repo)):
     return BlockOfTextService(repo)
+
+def get_like_repo(session: AsyncSession = Depends(get_db)):
+    return LikeRepositories(session)
+
+def get_like_service(block_repo: BlockOfTextRepository = Depends(get_post_repo),
+                     like_repo: LikeRepositories = Depends(get_like_repo)):
+    return LikeService(like_repo, block_repo)

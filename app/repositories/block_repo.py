@@ -23,7 +23,7 @@ class BlockOfTextRepository:
                                                                BlockOfText.is_active == True))
         return stmt.all()
 
-    async def get_one_block(self, uuid: uuid.UUID, user: User|None) -> BlockOfText:
+    async def get_one_block(self, uuid: uuid.UUID, user: User|None = None) -> BlockOfText:
         filters=[BlockOfText.id == uuid, BlockOfText.is_active == True]
 
         if not user is None:
