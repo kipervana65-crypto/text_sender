@@ -24,6 +24,11 @@ export const BlockPage = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  const refreshLikesCount = useCallback(async (blockId: string) => {
+    const likesResponse = await api.getTotalLikes(blockId);
+    setLikesCount(likesResponse.like_total);
+  }, []);
+
   const loadCommentTree = useCallback(async (blockId: string, parentId?: number): Promise<ThreadedComment[]> => {
     const fetchBranch = async (currentParentId: number | undefined, depth: number): Promise<ThreadedComment[]> => {
       const response = await api.getComments(blockId, 1, 100, currentParentId);
@@ -76,13 +81,18 @@ export const BlockPage = () => {
     } catch (e) {
       if (e instanceof ApiError && e.status === 400 && e.message === 'Already liked') {
         setHasLiked(true);
+        try {
+          await refreshLikesCount(id);
+        } catch {
+          // ignore secondary refresh errors and keep primary state intact
+        }
         return;
       }
       setActionError(getUserFriendlyError(e));
     } finally {
       setLikesActionLoading(false);
     }
-  }, [id]);
+  }, [id, refreshLikesCount]);
 
   const handleUnlike = useCallback(async () => {
     setLikesActionLoading(true);
@@ -92,11 +102,20 @@ export const BlockPage = () => {
       setLikesCount((previousCount) => Math.max(previousCount - 1, 0));
       setHasLiked(false);
     } catch (e) {
+      if (e instanceof ApiError && e.status === 404 && e.message === 'not found liked') {
+        setHasLiked(false);
+        try {
+          await refreshLikesCount(id);
+        } catch {
+          // ignore secondary refresh errors and keep primary state intact
+        }
+        return;
+      }
       setActionError(getUserFriendlyError(e));
     } finally {
       setLikesActionLoading(false);
     }
-  }, [id]);
+  }, [id, refreshLikesCount]);
 
   useEffect(() => {
     void loadData();
