@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { BlockView } from '../components/BlockView';
 import { CommentForm } from '../components/CommentForm';
 import { CommentList } from '../components/CommentList';
@@ -13,7 +13,12 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 export const BlockPage = () => {
   const MAX_REPLY_DEPTH = 1;
   const { id = '' } = useParams();
+  const location = useLocation();
   const { isAuthenticated, user } = useAuth();
+  const highlightedCommentId = (() => {
+    const [, value] = location.hash.match(/^#comment-(\d+)$/) ?? [];
+    return value ? Number(value) : undefined;
+  })();
 
   const [block, setBlock] = useState<BlockResponse | null>(null);
   const [comments, setComments] = useState<ThreadedComment[]>([]);
@@ -151,6 +156,7 @@ export const BlockPage = () => {
         isAuthenticated={isAuthenticated}
         onCommentsChanged={loadData}
         maxReplyDepth={MAX_REPLY_DEPTH}
+        highlightedCommentId={highlightedCommentId}
       />
     </section>
   );
