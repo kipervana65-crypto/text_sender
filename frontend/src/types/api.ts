@@ -69,6 +69,15 @@ export interface CommentResponse {
   username: string;
 }
 
+export interface CommentDetailsResponse {
+  id: number;
+  comment: string;
+  block_id: string;
+  user_id: number;
+  created_at: string;
+  is_active: boolean;
+}
+
 export interface CommentListResponse {
   items: CommentResponse[];
   total: number;

@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { api } from '../services/api';
 import { ThreadedComment } from '../types/api';
 import { getUserFriendlyError } from '../utils/errorMessages';
@@ -13,6 +13,7 @@ type CommentListProps = {
   onCommentsChanged: () => Promise<void>;
   depth?: number;
   maxReplyDepth?: number;
+  highlightedCommentId?: number;
 };
 
 export const CommentList = ({
@@ -23,6 +24,7 @@ export const CommentList = ({
   onCommentsChanged,
   depth = 0,
   maxReplyDepth = 1,
+  highlightedCommentId,
 }: CommentListProps) => {
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingValue, setEditingValue] = useState('');
@@ -30,6 +32,42 @@ export const CommentList = ({
   const [replyingCommentId, setReplyingCommentId] = useState<number | null>(null);
   const [expandedCommentIds, setExpandedCommentIds] = useState<Set<number>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const highlightedCommentRef = useRef<HTMLLIElement | null>(null);
+
+  useEffect(() => {
+    if (!highlightedCommentId) {
+      return;
+    }
+
+    const hasHighlightedInSubtree = (comment: ThreadedComment): boolean => {
+      if (comment.id === highlightedCommentId) {
+        return true;
+      }
+
+      return comment.replies.some(hasHighlightedInSubtree);
+    };
+
+    setExpandedCommentIds((previous) => {
+      const next = new Set(previous);
+      comments.forEach((comment) => {
+        if (comment.id !== highlightedCommentId && comment.replies.length > 0 && hasHighlightedInSubtree(comment)) {
+          next.add(comment.id);
+        }
+      });
+      return next;
+    });
+  }, [comments, highlightedCommentId]);
+
+  useEffect(() => {
+    if (!highlightedCommentRef.current || !highlightedCommentId) {
+      return;
+    }
+
+    highlightedCommentRef.current.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }, [comments, highlightedCommentId]);
 
   const toggleReplies = (commentId: number) => {
     setExpandedCommentIds((prev) => {
@@ -106,9 +144,15 @@ export const CommentList = ({
           const canReply = depth < maxReplyDepth;
           const hasReplies = comment.replies.length > 0;
           const isRepliesExpanded = expandedCommentIds.has(comment.id);
+          const isHighlighted = highlightedCommentId === comment.id;
 
           return (
-            <li key={comment.id} className="rounded border bg-white p-3">
+            <li
+              key={comment.id}
+              id={`comment-${comment.id}`}
+              ref={isHighlighted ? highlightedCommentRef : null}
+              className={`rounded border bg-white p-3 ${isHighlighted ? 'border-indigo-500 ring-2 ring-indigo-200' : ''}`}
+            >
               <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
                 <span>{comment.username}</span>
                 <span>{new Date(comment.created_at).toLocaleString()}</span>
@@ -213,6 +257,7 @@ export const CommentList = ({
                     onCommentsChanged={onCommentsChanged}
                     depth={depth + 1}
                     maxReplyDepth={maxReplyDepth}
+                    highlightedCommentId={highlightedCommentId}
                   />
                 </div>
               ) : null}

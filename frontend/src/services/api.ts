@@ -3,6 +3,7 @@ import {
   BlockResponse,
   LikeTotalResponse,
   CommentListResponse,
+  CommentDetailsResponse,
   CommentResponse,
   CreateBlockPayload,
   CreateCommentPayload,
@@ -170,6 +171,9 @@ export const api = {
 
     return request<CommentListResponse>(`/comment/get_comments?${params.toString()}`);
   },
+
+  getComment: (commentId: number) =>
+    request<CommentDetailsResponse>(`/comment/${commentId}`, { auth: true }),
 
 
   createComment: (blockId: string, payload: CreateCommentPayload, parentId?: number) => {

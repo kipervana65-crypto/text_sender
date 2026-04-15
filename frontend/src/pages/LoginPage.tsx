@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { StatusMessage } from '../components/StatusMessage';
@@ -7,12 +7,22 @@ import { ApiError } from '../types/api';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [verifyEmailLink, setVerifyEmailLink] = useState<string | null>(null);
+
+  const redirectAfterLogin = (() => {
+    const params = new URLSearchParams(location.search);
+    const redirect = params.get('redirect');
+    if (!redirect || !redirect.startsWith('/')) {
+      return '/';
+    }
+    return redirect;
+  })();
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -22,7 +32,7 @@ export const LoginPage = () => {
 
     try {
       await login(identifier.trim(), password);
-      navigate('/');
+      navigate(redirectAfterLogin, { replace: true });
     } catch (e) {
       setError(getUserFriendlyError(e));
 
