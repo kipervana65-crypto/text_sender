@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from pydantic import BaseModel, Field
 
@@ -11,6 +12,13 @@ class ResponseComment(CreateComment):
     created_at: datetime
     is_active: bool
     username: str
+
+class ResponseCommentAndUUID(CreateComment):
+    block_id: uuid.UUID
+    user_id: int
+    id: int
+    created_at: datetime
+    is_active: bool
 
 
 class CommentList(BaseModel):

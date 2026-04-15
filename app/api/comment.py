@@ -3,7 +3,7 @@ import uuid
 
 from ..core.dependencies import get_comment_service, get_current_user
 from ..db.models import User
-from ..schemas.comment_schemas import CreateComment, ResponseComment, CommentList
+from ..schemas.comment_schemas import CreateComment, ResponseComment, CommentList, ResponseCommentAndUUID
 from ..service.comment_service import CommentService
 from ..service.exceptions.except_for_block import BlockNotFound
 from ..service.exceptions.except_for_comment import (
@@ -110,3 +110,14 @@ async def delete_comment(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     return {'message': 'Ok'}
+
+@router.get('/{comment_id}', response_model=ResponseCommentAndUUID)
+async def get_comment(comment_id: int,
+                      serv: CommentService = Depends(get_comment_service),
+                      user: User = Depends(get_current_user)
+):
+    try:
+        comment = await serv.get_one_comment(comment_id)
+    except CommentNotFound:
+        raise HTTPException(status_code=404, detail='comment not found')
+    return comment

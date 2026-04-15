@@ -27,3 +27,19 @@ class EmailSender:
             server.starttls()
             server.login(self.SMTP_USER, self.SMTP_PASSWORD)
             server.send_message(msg)
+
+
+    def send_notification(self, to_email: str, comment_id):
+        subject = "Новый комментарий"
+        body = f"{settings.BACKEND_URL}/comment/{comment_id}"
+
+        msg = MIMEMultipart()
+        msg["From"] = self.SMTP_USER
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(body, "plain"))
+
+        with smtplib.SMTP(self.SMTP_SERVER, self.SMTP_PORT) as server:
+            server.starttls()
+            server.login(self.SMTP_USER, self.SMTP_PASSWORD)
+            server.send_message(msg)

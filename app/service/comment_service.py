@@ -2,6 +2,7 @@ import uuid
 
 from ..db.models import User, Comment
 from ..repositories.comment_repo import CommentRepository
+from ..service.email_service import EmailSender
 from .exceptions.except_for_block import BlockNotFound
 from .exceptions.except_for_comment import (
     CommentNotFound,
@@ -11,8 +12,9 @@ from .exceptions.except_for_comment import (
 
 
 class CommentService:
-    def __init__(self, repo: CommentRepository):
-        self.repo = repo
+    def __init__(self, comment_repo: CommentRepository):
+        self.comment_repo = comment_repo
+        self.email_service = EmailSender()
 
     async def create_comment(
         self,
@@ -21,19 +23,21 @@ class CommentService:
         user: User,
         parent_id: int | None = None,
     ) -> Comment:
-        block = await self.repo.get_active_block(block_id)
+        block = await self.comment_repo.get_active_block(block_id)
         if not block:
             raise BlockNotFound
 
         if parent_id is not None:
-            parent_comment = await self.repo.get_active_comment(parent_id)
+            parent_comment = await self.comment_repo.get_active_comment(parent_id)
             if not parent_comment:
                 raise ParentCommentNotFound
 
             if parent_comment.block_id != block_id:
                 raise ParentCommentNotBelongToBlock
 
-        return await self.repo.create_comment(text, block_id, user.id, parent_id)
+        comment = await self.comment_repo.create_comment(text, block_id, user.id, parent_id)
+        self.email_service.send_notification(to_email=user.email, comment_id=comment.id)
+        return comment
 
     async def get_comments(
         self,
@@ -42,27 +46,33 @@ class CommentService:
         page: int,
         page_size: int,
     ) -> tuple[list[dict], int]:
-        block = await self.repo.get_active_block(block_id)
+        block = await self.comment_repo.get_active_block(block_id)
         if not block:
             raise BlockNotFound
 
         if parent_id is not None:
-            parent_comment = await self.repo.get_active_comment(parent_id)
+            parent_comment = await self.comment_repo.get_active_comment(parent_id)
             if not parent_comment:
                 raise ParentCommentNotFound
 
-        return await self.repo.get_comments(block_id, parent_id, page, page_size)
+        return await self.comment_repo.get_comments(block_id, parent_id, page, page_size)
+
+    async def get_one_comment(self, comment_id: int) -> Comment:
+        comment = await self.comment_repo.get_active_comment(comment_id)
+        if not comment:
+            raise CommentNotFound
+        return comment
 
     async def update_comment(self, comment_id: int, text: str, user: User) -> Comment:
-        comment = await self.repo.get_user_comment(comment_id, user.id)
+        comment = await self.comment_repo.get_user_comment(comment_id, user.id)
         if not comment:
             raise CommentNotFound
 
-        return await self.repo.update_comment(comment, text)
+        return await self.comment_repo.update_comment(comment, text)
 
     async def delete_comment(self, comment_id: int, user: User) -> None:
-        comment = await self.repo.get_user_comment(comment_id, user.id)
+        comment = await self.comment_repo.get_user_comment(comment_id, user.id)
         if not comment:
             raise CommentNotFound
 
-        await self.repo.deactivate_comment(comment)
+        await self.comment_repo.deactivate_comment(comment)
