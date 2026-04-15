@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     SMTP_PORT: int
     SMTP_USER: str
     SMTP_PASSWORD: str
-    BACKEND_URL: str
+    FRONTEND_URL: str
 
     model_config = SettingsConfigDict(
         env_file=".env",  # Pydantic будет искать файл .env

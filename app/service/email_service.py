@@ -31,7 +31,7 @@ class EmailSender:
 
     def send_notification(self, to_email: str, comment_id):
         subject = "Новый комментарий"
-        body = f"{settings.BACKEND_URL}/comment/{comment_id}"
+        body = f"{settings.FRONTEND_URL}/comment/{comment_id}"
 
         msg = MIMEMultipart()
         msg["From"] = self.SMTP_USER

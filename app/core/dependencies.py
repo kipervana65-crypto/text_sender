@@ -13,6 +13,7 @@ from ..repositories.like_repo import LikeRepositories
 from ..service.like_service import LikeService
 from ..repositories.comment_repo import CommentRepository
 from ..service.comment_service import CommentService
+from ..repositories.user_repo import UserRepositories
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
@@ -69,6 +70,9 @@ def get_like_service(block_repo: BlockOfTextRepository = Depends(get_post_repo),
 def get_comment_repo(session: AsyncSession = Depends(get_db)):
     return CommentRepository(session)
 
+def get_user_repo(session: AsyncSession = Depends(get_db)):
+    return UserRepositories(session)
 
-def get_comment_service(repo: CommentRepository = Depends(get_comment_repo)):
-    return CommentService(repo)
+def get_comment_service(comment_repo: CommentRepository = Depends(get_comment_repo),
+                        user_repo: UserRepositories = Depends(get_user_repo)):
+    return CommentService(comment_repo, user_repo)

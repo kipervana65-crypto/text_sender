@@ -2,6 +2,7 @@ import uuid
 
 from ..db.models import User, Comment
 from ..repositories.comment_repo import CommentRepository
+from ..repositories.user_repo import UserRepositories
 from ..service.email_service import EmailSender
 from .exceptions.except_for_block import BlockNotFound
 from .exceptions.except_for_comment import (
@@ -12,8 +13,10 @@ from .exceptions.except_for_comment import (
 
 
 class CommentService:
-    def __init__(self, comment_repo: CommentRepository):
+    def __init__(self, comment_repo: CommentRepository,
+                 user_repo: UserRepositories):
         self.comment_repo = comment_repo
+        self.user_repo = user_repo
         self.email_service = EmailSender()
 
     async def create_comment(
@@ -36,7 +39,8 @@ class CommentService:
                 raise ParentCommentNotBelongToBlock
 
         comment = await self.comment_repo.create_comment(text, block_id, user.id, parent_id)
-        self.email_service.send_notification(to_email=user.email, comment_id=comment.id)
+        user_by_block = await self.user_repo.get_user_by_block_id(block_id)
+        self.email_service.send_notification(to_email=user_by_block.email, comment_id=comment.id)
         return comment
 
     async def get_comments(
