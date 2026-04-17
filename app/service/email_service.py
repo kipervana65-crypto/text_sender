@@ -29,7 +29,7 @@ class EmailSender:
             server.send_message(msg)
 
 
-    def send_notification(self, to_email: str, comment_id):
+    def send_notification(self, to_email: str, comment_id: int):
         subject = "Новый комментарий"
         body = f"{settings.FRONTEND_URL}/comment/{comment_id}"
 
@@ -43,3 +43,4 @@ class EmailSender:
             server.starttls()
             server.login(self.SMTP_USER, self.SMTP_PASSWORD)
             server.send_message(msg)
+            print('комментарий отправился')

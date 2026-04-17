@@ -16,7 +16,8 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=".env",  # Pydantic будет искать файл .env
-        env_file_encoding="utf-8"  # Указываем кодировку файла
+        env_file_encoding="utf-8", # Указываем кодировку файла
+        extra='ignore'
     )
 
 

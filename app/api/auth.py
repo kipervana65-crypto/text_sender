@@ -5,6 +5,7 @@ from sqlalchemy import or_, select
 from ..schemas.auth import Token
 from ..schemas.user import UserResponse, UserCreate
 from jose import jwt, JWTError
+from ..celery_task import send_code_email
 
 
 from ..db.models.user import User
@@ -80,8 +81,7 @@ async def send_code(email: str,
 
     # Отправляем код
     code=random.randint(100000, 999999)
-    email_sender=EmailSender()
-    email_sender.send_email_code(to_email=str(user.email), code=str(code))
+    send_code_email.delay(str(user.email), str(code))
 
     user.code=code
     await session.commit()

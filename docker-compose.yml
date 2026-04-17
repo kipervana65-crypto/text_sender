@@ -9,14 +9,23 @@ services:
       POSTGRES_PASSWORD: 12345
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U iv -d text_sender"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: text_sender_redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
 
   backend:
     build:
@@ -26,19 +35,42 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://iv:12345@db:5432/text_sender
+      ALEMBIC_DATABASE_URL: postgresql+psycopg://iv:12345@db:5432/text_sender
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     ports:
       - "8000:8000"
-    networks:
-      - app_network
-    dns:
-      - 1.1.1.1
-      - 8.8.8.8
     command: >
       sh -c "uv run alembic upgrade head &&
              uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: text_sender_celery_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://iv:12345@db:5432/text_sender
+      ALEMBIC_DATABASE_URL: postgresql+psycopg://iv:12345@db:5432/text_sender
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "uv run celery -A app.celery_task worker --loglevel=info"
 
   frontend:
     build:
@@ -52,12 +84,6 @@ services:
       - backend
     ports:
       - "5173:80"
-    networks:
-      - app_network
 
 volumes:
   postgres_data:
-
-networks:
-  app_network:
-    driver: bridge

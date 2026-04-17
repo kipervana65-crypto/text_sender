@@ -10,6 +10,7 @@ from .exceptions.except_for_comment import (
     ParentCommentNotFound,
     ParentCommentNotBelongToBlock,
 )
+from ..celery_task import send_notification_email
 
 
 class CommentService:
@@ -40,7 +41,7 @@ class CommentService:
 
         comment = await self.comment_repo.create_comment(text, block_id, user.id, parent_id)
         user_by_block = await self.user_repo.get_user_by_block_id(block_id)
-        self.email_service.send_notification(to_email=user_by_block.email, comment_id=comment.id)
+        send_notification_email.delay(str(user_by_block.email), comment.id)
         return comment
 
     async def get_comments(
