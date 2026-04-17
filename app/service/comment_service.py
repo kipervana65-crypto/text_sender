@@ -41,7 +41,8 @@ class CommentService:
 
         comment = await self.comment_repo.create_comment(text, block_id, user.id, parent_id)
         user_by_block = await self.user_repo.get_user_by_block_id(block_id)
-        send_notification_email.delay(str(user_by_block.email), comment.id)
+        if user.id!=user_by_block.id:
+            send_notification_email.delay(str(user_by_block.email), comment.id)
         return comment
 
     async def get_comments(
